@@ -49,10 +49,10 @@
             background-size: cover;
         }
         .earth {
-            width: 150px;
-            height: 150px;
-            bottom: 10%;
-            left: 5%;
+            width: 300px;
+            height: 300px;
+            bottom: -50px;
+            left: -50px;
             background: url('https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg') no-repeat center;
             background-size: cover;
             animation: rotateEarth 10s infinite linear;
@@ -77,8 +77,8 @@
         .alien {
             width: 60px;
             height: 60px;
-            bottom: 13%;
-            left: 7%;
+            bottom: 20px;
+            left: 80px;
             background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Alien_icon.svg/200px-Alien_icon.svg.png') no-repeat center;
             background-size: cover;
             animation: peekAlien 3s infinite alternate;
@@ -86,6 +86,19 @@
         @keyframes peekAlien {
             0% { transform: translateX(-20px); opacity: 0; }
             100% { transform: translateX(10px); opacity: 1; }
+        }
+        .mars {
+            width: 100px;
+            height: 100px;
+            top: 30%;
+            right: 20%;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/0/02/OSIRIS_Mars_true_color.jpg') no-repeat center;
+            background-size: cover;
+            animation: floatPlanet 7s infinite alternate ease-in-out;
+        }
+        @keyframes floatPlanet {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(20px); }
         }
         .container {
             max-width: 800px;
@@ -110,8 +123,8 @@
             text-align: center;
         }
         button {
-            padding: 6px 12px;
-            font-size: 0.8em;
+            padding: 4px 10px;
+            font-size: 0.7em;
             background: #ff4500;
             color: white;
             border: none;
@@ -125,27 +138,13 @@
             box-shadow: 2px 2px 15px rgba(255, 87, 34, 0.8);
             transform: scale(1.05);
         }
-        .links {
-            margin-top: 20px;
-        }
-        .links a {
-            display: block;
-            color: #ffcc00;
-            text-decoration: none;
-            font-size: 1.2em;
-            margin: 10px 0;
-        }
-        .search-section {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
     </style>
 </head>
 <body>
     <div class="background">
         <div class="stars"></div>
         <div class="planet earth"></div>
+        <div class="planet mars"></div>
         <div class="moon"></div>
         <div class="alien"></div>
     </div>
@@ -153,7 +152,6 @@
         <h1>Ulugbek</h1>
         <h2>Movie Finder</h2>
         <p>Find a movie by genre, actors, or description</p>
-        
         <div class="search-section">
             <input type="text" placeholder="Search by Genre">
             <button>Search</button>
@@ -161,12 +159,6 @@
             <button>Search</button>
             <input type="text" placeholder="Describe a Movie">
             <button>Search</button>
-        </div>
-        
-        <div class="links">
-            <a href="#">Assignments of Space 1</a>
-            <a href="#">Assignments of Space 2</a>
-            <a href="#">Assignments of Space 3</a>
         </div>
     </div>
     
