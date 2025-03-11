@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Finder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: black;
+            color: white;
+            margin: 0;
+            overflow: hidden;
+        }
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://source.unsplash.com/1600x900/?space,stars');
+            background-size: cover;
+            animation: animateBackground 20s linear infinite;
+            z-index: -1;
+        }
+        @keyframes animateBackground {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.3);
+            margin-top: 50px;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1em;
+            background: #ff4500;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #ff5722;
+        }
+        .links {
+            margin-top: 20px;
+        }
+        .links a {
+            display: block;
+            color: #ffcc00;
+            text-decoration: none;
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+        .search-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="background"></div>
+    <div class="container">
+        <h1>Ulugbek</h1>
+        <h2>Movie Finder</h2>
+        <p>Find a movie by genre, actors, or description</p>
+        
+        <div class="search-section">
+            <input type="text" placeholder="Search by Genre">
+            <button>Search</button>
+            <input type="text" placeholder="Search by Actor">
+            <button>Search</button>
+            <input type="text" placeholder="Describe a Movie">
+            <button>Search</button>
+        </div>
+        
+        <div class="links">
+            <a href="#">Assignments of Space 1</a>
+            <a href="#">Assignments of Space 2</a>
+            <a href="#">Assignments of Space 3</a>
+        </div>
+    </div>
+</body>
+</html>
