@@ -19,15 +19,44 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: url('https://www.solarsystemscope.com/textures/download/2k_stars.jpg');
-            background-size: cover;
-            animation: animateBackground 30s linear infinite;
+            background: radial-gradient(circle, rgba(0,0,0,0.8) 10%, rgba(0,0,0,1) 100%);
+            overflow: hidden;
             z-index: -1;
         }
-        @keyframes animateBackground {
-            0% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(1.05) rotate(1deg); }
-            100% { transform: scale(1) rotate(0deg); }
+        .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .star {
+            position: absolute;
+            background: white;
+            width: 2px;
+            height: 2px;
+            opacity: 0.8;
+            border-radius: 50%;
+            animation: twinkle 2s infinite;
+        }
+        @keyframes twinkle {
+            0% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0.5; transform: scale(1); }
+        }
+        .moon {
+            position: absolute;
+            top: 10%;
+            right: 10%;
+            width: 80px;
+            height: 80px;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/300px-FullMoon2010.jpg') no-repeat center;
+            background-size: cover;
+            border-radius: 50%;
+            animation: floatMoon 5s infinite alternate ease-in-out;
+        }
+        @keyframes floatMoon {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(15px); }
         }
         .container {
             max-width: 800px;
@@ -85,7 +114,10 @@
     </style>
 </head>
 <body>
-    <div class="background"></div>
+    <div class="background">
+        <div class="stars"></div>
+        <div class="moon"></div>
+    </div>
     <div class="container">
         <h1>Ulugbek</h1>
         <h2>Movie Finder</h2>
@@ -106,6 +138,20 @@
             <a href="#">Assignments of Space 3</a>
         </div>
     </div>
+    
+    <script>
+        function createStars() {
+            const starsContainer = document.querySelector('.stars');
+            for (let i = 0; i < 100; i++) {
+                let star = document.createElement('div');
+                star.classList.add('star');
+                star.style.top = Math.random() * 100 + 'vh';
+                star.style.left = Math.random() * 100 + 'vw';
+                star.style.animationDuration = (Math.random() * 2 + 1) + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        createStars();
+    </script>
 </body>
 </html>
-
