@@ -43,20 +43,49 @@
             50% { opacity: 1; transform: scale(1.2); }
             100% { opacity: 0.5; transform: scale(1); }
         }
-        .moon {
+        .planet {
             position: absolute;
-            top: 10%;
-            right: 10%;
+            border-radius: 50%;
+            background-size: cover;
+        }
+        .earth {
+            width: 150px;
+            height: 150px;
+            bottom: 10%;
+            left: 5%;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg') no-repeat center;
+            background-size: cover;
+            animation: rotateEarth 10s infinite linear;
+        }
+        @keyframes rotateEarth {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .moon {
             width: 80px;
             height: 80px;
+            top: 10%;
+            right: 10%;
             background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/300px-FullMoon2010.jpg') no-repeat center;
             background-size: cover;
-            border-radius: 50%;
             animation: floatMoon 5s infinite alternate ease-in-out;
         }
         @keyframes floatMoon {
             0% { transform: translateY(0); }
             100% { transform: translateY(15px); }
+        }
+        .alien {
+            width: 60px;
+            height: 60px;
+            bottom: 13%;
+            left: 7%;
+            background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Alien_icon.svg/200px-Alien_icon.svg.png') no-repeat center;
+            background-size: cover;
+            animation: peekAlien 3s infinite alternate;
+        }
+        @keyframes peekAlien {
+            0% { transform: translateX(-20px); opacity: 0; }
+            100% { transform: translateX(10px); opacity: 1; }
         }
         .container {
             max-width: 800px;
@@ -81,8 +110,8 @@
             text-align: center;
         }
         button {
-            padding: 8px 16px;
-            font-size: 0.9em;
+            padding: 6px 12px;
+            font-size: 0.8em;
             background: #ff4500;
             color: white;
             border: none;
@@ -116,7 +145,9 @@
 <body>
     <div class="background">
         <div class="stars"></div>
+        <div class="planet earth"></div>
         <div class="moon"></div>
+        <div class="alien"></div>
     </div>
     <div class="container">
         <h1>Ulugbek</h1>
