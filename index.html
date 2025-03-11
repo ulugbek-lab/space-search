@@ -50,10 +50,10 @@
             z-index: 1;
         }
         .earth {
-            width: 500px;
-            height: 500px;
-            bottom: -150px;
-            left: -150px;
+            width: 600px;
+            height: 600px;
+            bottom: -200px;
+            left: -200px;
             background: url('https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg') no-repeat center;
             background-size: cover;
             animation: rotateEarth 10s infinite linear;
@@ -63,10 +63,10 @@
             100% { transform: rotate(360deg); }
         }
         .moon {
-            width: 80px;
-            height: 80px;
+            width: 150px;
+            height: 150px;
             top: 15%;
-            right: 10%;
+            right: 15%;
             background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/300px-FullMoon2010.jpg') no-repeat center;
             background-size: cover;
             animation: floatMoon 5s infinite alternate ease-in-out;
@@ -78,20 +78,19 @@
         .alien {
             width: 100px;
             height: 100px;
-            bottom: 100px;
-            left: 150px;
             background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Alien_icon.svg/200px-Alien_icon.svg.png') no-repeat center;
             background-size: cover;
             z-index: 2;
-            animation: peekAlien 3s infinite alternate;
+            animation: flyAlien 6s infinite alternate ease-in-out;
         }
-        @keyframes peekAlien {
-            0% { transform: translateX(-20px); opacity: 0; }
-            100% { transform: translateX(10px); opacity: 1; }
+        @keyframes flyAlien {
+            0% { transform: translate(10vw, 20vh); }
+            50% { transform: translate(50vw, 50vh); }
+            100% { transform: translate(80vw, 30vh); }
         }
         .mars {
-            width: 120px;
-            height: 120px;
+            width: 140px;
+            height: 140px;
             top: 40%;
             right: 20%;
             background: url('https://upload.wikimedia.org/wikipedia/commons/0/02/OSIRIS_Mars_true_color.jpg') no-repeat center;
