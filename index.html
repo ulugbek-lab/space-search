@@ -1,181 +1,140 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Movie Finder</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: black;
-            color: white;
-            margin: 0;
-            overflow: hidden;
-        }
-        .background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0.8) 10%, rgba(0,0,0,1) 100%);
-            overflow: hidden;
-            z-index: -1;
-        }
-        .stars {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-        .star {
-            position: absolute;
-            background: white;
-            width: 2px;
-            height: 2px;
-            opacity: 0.8;
-            border-radius: 50%;
-            animation: twinkle 2s infinite;
-        }
-        @keyframes twinkle {
-            0% { opacity: 0.5; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.2); }
-            100% { opacity: 0.5; transform: scale(1); }
-        }
-        .planet {
-            position: absolute;
-            border-radius: 50%;
-            background-size: cover;
-            z-index: 1;
-        }
-        .earth {
-            width: 600px;
-            height: 600px;
-            bottom: -200px;
-            left: -200px;
-            background: url('https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg') no-repeat center;
-            background-size: cover;
-            animation: rotateEarth 10s infinite linear;
-        }
-        @keyframes rotateEarth {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .moon {
-            width: 150px;
-            height: 150px;
-            top: 15%;
-            right: 15%;
-            background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/300px-FullMoon2010.jpg') no-repeat center;
-            background-size: cover;
-            animation: floatMoon 5s infinite alternate ease-in-out;
-        }
-        @keyframes floatMoon {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(15px); }
-        }
-        .alien {
-            width: 100px;
-            height: 100px;
-            background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Alien_icon.svg/200px-Alien_icon.svg.png') no-repeat center;
-            background-size: cover;
-            z-index: 2;
-            animation: flyAlien 6s infinite alternate ease-in-out;
-        }
-        @keyframes flyAlien {
-            0% { transform: translate(10vw, 20vh); }
-            50% { transform: translate(50vw, 50vh); }
-            100% { transform: translate(80vw, 30vh); }
-        }
-        .mars {
-            width: 140px;
-            height: 140px;
-            top: 40%;
-            right: 20%;
-            background: url('https://upload.wikimedia.org/wikipedia/commons/0/02/OSIRIS_Mars_true_color.jpg') no-repeat center;
-            background-size: cover;
-            animation: floatPlanet 7s infinite alternate ease-in-out;
-        }
-        @keyframes floatPlanet {
-            0% { transform: translateY(0); }
-            100% { transform: translateY(20px); }
-        }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            background: rgba(0, 0, 0, 0.85);
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.3);
-            margin-top: 50px;
-        }
-        h1 {
-            font-size: 2.5em;
-            margin-bottom: 20px;
-        }
-        input {
-            width: 80%;
-            padding: 10px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 5px;
-            font-size: 1em;
-            text-align: center;
-        }
-        button {
-            padding: 4px 10px;
-            font-size: 0.7em;
-            background: #ff4500;
-            color: white;
-            border: none;
-            cursor: pointer;
-            border-radius: 5px;
-            box-shadow: 2px 2px 10px rgba(255, 69, 0, 0.6);
-            transition: all 0.3s ease;
-        }
-        button:hover {
-            background: #ff5722;
-            box-shadow: 2px 2px 15px rgba(255, 87, 34, 0.8);
-            transform: scale(1.05);
-        }
-    </style>
-</head>
-<body>
-    <div class="background">
-        <div class="stars"></div>
-        <div class="planet earth"></div>
-        <div class="planet mars"></div>
-        <div class="moon"></div>
-        <div class="alien"></div>
-    </div>
-    <div class="container">
-        <h1>Ulugbek</h1>
-        <h2>Movie Finder</h2>
-        <p>Find a movie by genre, actors, or description</p>
-        <div class="search-section">
-            <input type="text" placeholder="Search by Genre">
-            <button>Search</button>
-            <input type="text" placeholder="Search by Actor">
-            <button>Search</button>
-            <input type="text" placeholder="Describe a Movie">
-            <button>Search</button>
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { CheckCircle } from "lucide-react";
+
+export default function LogisticsPage() {
+  const [files, setFiles] = useState(Array(6).fill(null));
+  const [feedback, setFeedback] = useState("");
+  const [grades, setGrades] = useState(Array(6).fill(""));
+  const [backgroundImage, setBackgroundImage] = useState("");
+  const [showCongrats, setShowCongrats] = useState(false);
+
+  const handleFileChange = (index, event) => {
+    const newFiles = [...files];
+    newFiles[index] = event.target.files[0];
+    setFiles(newFiles);
+    triggerCongrats();
+  };
+
+  const handleGradeChange = (index, event) => {
+    const newGrades = [...grades];
+    newGrades[index] = event.target.value;
+    setGrades(newGrades);
+    triggerCongrats();
+  };
+
+  const handleSubmitFeedback = () => {
+    if (feedback.trim()) {
+      triggerCongrats();
+      setFeedback("");
+    }
+  };
+
+  const triggerCongrats = () => {
+    setShowCongrats(true);
+    setTimeout(() => setShowCongrats(false), 2000);
+  };
+
+  return (
+    <div className="relative min-h-screen bg-cover bg-center overflow-hidden" style={{ backgroundImage: `url(${backgroundImage || 'https://source.unsplash.com/1600x900/?logistics,transport'})` }}>
+      <motion.div 
+        className="absolute inset-0 bg-black bg-opacity-60"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.6 }}
+        transition={{ duration: 1 }}
+      ></motion.div>
+      
+      <div className="relative z-10 flex flex-col items-center text-white p-10">
+        <motion.h1 
+          className="text-4xl font-bold bg-gradient-to-r from-gray-500 via-gray-700 to-gray-900 text-transparent bg-clip-text"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.7 }}
+        >
+          Never on Time Logistics
+        </motion.h1>
+        <motion.h2 
+          className="text-2xl mt-2 bg-gradient-to-r from-gray-600 to-gray-800 text-transparent bg-clip-text"
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.7, delay: 0.3 }}
+        >
+          Ulugbek - ID: 2217841
+        </motion.h2>
+        
+        <div className="mt-6 p-4 bg-gray-800 text-gray-300 rounded-lg w-80 text-center">
+          <label className="block text-sm">Choose Background Image:</label>
+          <input 
+            type="text" 
+            placeholder="Paste image URL here..." 
+            className="mt-2 w-full p-2 bg-gray-700 text-white rounded-lg"
+            onChange={(e) => setBackgroundImage(e.target.value)}
+          />
         </div>
+
+        <div className="mt-10 w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="p-4 bg-gray-900 bg-opacity-80 rounded-xl shadow-lg">
+              <CardContent className="flex flex-col items-center">
+                <h3 className="text-lg font-semibold text-gray-300">Assignment {i + 1}</h3>
+                <input 
+                  type="file" 
+                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" 
+                  className="mt-3 p-2 bg-gray-700 text-white rounded cursor-pointer"
+                  onChange={(e) => handleFileChange(i, e)}
+                />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        
+        <div className="mt-10 w-full max-w-3xl">
+          <h3 className="text-2xl font-semibold text-gray-400">Feedback Section</h3>
+          <motion.textarea 
+            className="mt-2 w-full p-3 bg-black text-gray-300 rounded-lg"
+            placeholder="Leave feedback here..."
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            whileFocus={{ scale: 1.05 }}
+          ></motion.textarea>
+          <Button onClick={handleSubmitFeedback} className="mt-3 bg-gray-700 hover:bg-gray-600 text-white">Submit Feedback</Button>
+        </div>
+        
+        <div className="mt-10 w-full max-w-3xl">
+          <h3 className="text-2xl font-semibold text-purple-400">Grading Section</h3>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="p-4 bg-purple-900 bg-opacity-80 rounded-xl shadow-lg">
+                <CardContent className="flex flex-col items-center">
+                  <h3 className="text-lg font-semibold text-gray-300">Assignment {i + 1}</h3>
+                  <input 
+                    type="number" 
+                    min="0" max="100" 
+                    className="mt-3 text-black bg-gray-700 text-white p-2 rounded cursor-pointer"
+                    placeholder="Enter grade..."
+                    value={grades[i]}
+                    onChange={(e) => handleGradeChange(i, e)}
+                  />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {showCongrats && (
+          <motion.div 
+            className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-600 text-white p-4 rounded-lg flex items-center shadow-lg"
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            transition={{ duration: 0.5 }}
+          >
+            <CheckCircle className="mr-2" /> Congratulations! Your submission was successful!
+          </motion.div>
+        )}
+      </div>
     </div>
-    
-    <script>
-        function createStars() {
-            const starsContainer = document.querySelector('.stars');
-            for (let i = 0; i < 100; i++) {
-                let star = document.createElement('div');
-                star.classList.add('star');
-                star.style.top = Math.random() * 100 + 'vh';
-                star.style.left = Math.random() * 100 + 'vw';
-                star.style.animationDuration = (Math.random() * 2 + 1) + 's';
-                starsContainer.appendChild(star);
-            }
-        }
-        createStars();
-    </script>
-</body>
-</html>
+  );
+}
