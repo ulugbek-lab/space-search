@@ -1,1549 +1,185 @@
-// Initialize the game
-        function initGame() {
-            // Generate background stars
-            generateStars();
-            
-            // Set up game
-            setupGame();
-            
-            // Add event listeners
-            setupEventListeners();
-            
-            // Show instructions on first load
-            instructionsModal.style.display = 'flex';
-        }
-        
-        // Generate background stars
-        function generateStars() {
-            const starCount = 150; // More stars
-            for (let i = 0; i < starCount; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                
-                // Random size between 1 and 3 pixels
-                const size = Math.random() * 3 + 1;
-                star.style.width = `${size}px`;
-                star.style.height = `${size}px`;
-                
-                // Random position
-                star.style.left = `${Math.random() * 100}%`;
-                star.style.top = `${Math.random() * 100}%`;
-                
-                // Random opacity
-                star.style.opacity = Math.random() * 0.8 + 0.2;
-                
-                mapContainer.appendChild(star);
-            }
-        }
-        
-        // Setup the game
-        function setupGame() {
-            // Clear previous game
-            clearGame();
-            
-            // Generate planets in hexagon pattern
-            generatePlanets(7); // 7 planets - 6 in hexagon + 1 center
-            
-            // Generate paths between planets
-            generatePaths();
-            
-            // Choose a random planet as the starting point
-            gameState.startPlanet = gameState.planets[Math.floor(Math.random() * gameState.planets.length)];
-            gameState.startPlanet.element.classList.add('selected');
-            
-            // Add the start planet to the route
-            addToRoute(gameState.startPlanet);
-            
-            // Update the locations list
-            updateLocationsList();
-            
-            // Generate an approximate optimal route for scoring
-            generateOptimalRoute();
-        }
-        
-        // Clear the current game
-        function clearGame() {
-            // Clear planets and paths
-            gameState.planets = [];
-            gameState.paths = [];
-            gameState.currentRoute = [];
-            gameState.selectedPaths = [];
-            gameState.startPlanet = null;
-            gameState.activeEvent = null;
-            
-            // Clear UI elements
-            mapContainer.innerHTML = '';
-            generateStars(); // Regenerate stars
-            
-            // Reset counters
-            fuelCounter.textContent = '0';
-            
-            // Hide results
-            resultsContainer.querySelector('.results-content').style.display = 'none';
-        }<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cosmic Courier: The Route Challenge</title>
+    <title>Family Battle Pass - South Korea</title>
     <style>
         body {
+            margin: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #121212;
-            color: #e0e0e0;
-            overflow-x: hidden;
+            background-color: #e6f0ff;
+            color: #333;
         }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
         header {
-            text-align: center;
-            padding: 20px 0;
-            background-color: #1e1e1e;
-            border-bottom: 3px solid #7b3ff7;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, #7b3ff7, #3f51b5);
-            opacity: 0.1;
-            z-index: 0;
-        }
-        
-        h1 {
-            color: #7b3ff7;
-            text-shadow: 0 0 15px rgba(123, 63, 247, 0.8);
-            margin: 0;
-            font-size: 2.8em;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .game-description {
-            background-color: #1e1e1e;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 25px;
-            border-left: 4px solid #7b3ff7;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            font-size: 1.1em;
-            line-height: 1.5;
-        }
-        
-        .game-area {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 25px;
-        }
-        
-        .game-map {
-            flex: 1;
-            min-width: 300px;
-            background-color: #1e1e1e;
-            border-radius: 15px;
-            padding: 20px;
-            position: relative;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
-            overflow: hidden;
-        }
-        
-        .map-container {
-            position: relative;
-            width: 100%;
-            height: 500px;
-            background: radial-gradient(circle at center, #151530, #0c0c1d);
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.5);
-        }
-        
-        .controls {
-            flex: 1;
-            min-width: 300px;
-            background-color: #1e1e1e;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
-        }
-        
-        .control-group {
-            margin-bottom: 25px;
-        }
-        
-        .control-group h3 {
-            margin-top: 0;
-            color: #7b3ff7;
-            font-size: 1.3em;
-            border-bottom: 2px solid #2e2e2e;
-            padding-bottom: 8px;
-        }
-        
-        .locations-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        
-        .location-item {
-            background-color: #2e2e2e;
-            padding: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.3s;
-            border: 2px solid transparent;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-        }
-        
-        .location-item:hover {
-            background-color: #3e3e3e;
-            transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-        }
-        
-        .location-item.selected {
-            border-color: #7b3ff7;
-            background-color: #3a2a5a;
-            box-shadow: 0 0 12px rgba(123, 63, 247, 0.4);
-        }
-        
-        .button {
-            background: linear-gradient(45deg, #7b3ff7, #6a2ee6);
+            background-color: #0072ce;
             color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            transition: all 0.3s;
-            margin-right: 12px;
-            margin-bottom: 12px;
-            box-shadow: 0 4px 10px rgba(123, 63, 247, 0.3);
-        }
-        
-        .button:hover {
-            background: linear-gradient(45deg, #8a52ff, #7b3ff7);
-            transform: translateY(-3px);
-            box-shadow: 0 7px 15px rgba(123, 63, 247, 0.4);
-        }
-        
-        .button:active {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(123, 63, 247, 0.4);
-        }
-        
-        .button.secondary {
-            background: linear-gradient(45deg, #444, #333);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-        
-        .button.secondary:hover {
-            background: linear-gradient(45deg, #555, #444);
-            box-shadow: 0 7px 15px rgba(0, 0, 0, 0.3);
-        }
-        
-        .results {
-            background-color: #1e1e1e;
-            border-radius: 15px;
             padding: 20px;
-            margin-top: 25px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
-        }
-        
-        .results h2 {
-            color: #7b3ff7;
-            border-bottom: 2px solid #2e2e2e;
-            padding-bottom: 8px;
-        }
-        
-        .results-content {
-            display: none;
-            animation: fadeIn 0.7s;
-        }
-        
-        .planet {
-            position: absolute;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            box-shadow: 0 0 30px rgba(123, 63, 247, 0.6), inset 0 0 15px rgba(255, 255, 255, 0.4);
-            transition: all 0.3s;
-            cursor: pointer;
-            z-index: 10;
-        }
-        
-        .planet:hover {
-            transform: scale(1.15);
-            box-shadow: 0 0 40px rgba(123, 63, 247, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.6);
-        }
-        
-        .planet-name {
-            position: absolute;
-            bottom: -28px;
-            background: linear-gradient(to right, rgba(30, 30, 30, 0.9), rgba(46, 46, 46, 0.9));
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 13px;
-            white-space: nowrap;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(123, 63, 247, 0.3);
-        }
-        
-        .planet-ring {
-            position: absolute;
-            transition: all 0.3s;
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-        }
-        
-        .path {
-            position: absolute;
-            background: linear-gradient(to right, rgba(123, 63, 247, 0.05), rgba(255, 255, 255, 0.2));
-            transform-origin: 0 50%;
-            pointer-events: none;
-            z-index: 1;
-            border-radius: 2px;
-            box-shadow: 0 0 8px rgba(123, 63, 247, 0.2);
-        }
-        
-        .selected-path {
-            position: absolute;
-            background: linear-gradient(to right, rgba(123, 63, 247, 0.7), rgba(123, 63, 247, 0.5));
-            transform-origin: 0 50%;
-            pointer-events: none;
-            z-index: 2;
-            box-shadow: 0 0 15px rgba(123, 63, 247, 0.9);
-            border-radius: 3px;
-            animation: pulsePath 2s infinite alternate;
-        }
-        
-        @keyframes pulsePath {
-            from { opacity: 0.7; }
-            to { opacity: 1; }
-        }
-        
-        .fuel-display {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            background-color: #2a2a40;
-            padding: 12px 15px;
-            border-radius: 10px;
-            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
-        }
-        
-        .fuel-icon {
-            margin-right: 15px;
-            color: #f7b63f;
-            font-size: 28px;
-            text-shadow: 0 0 10px rgba(247, 182, 63, 0.8);
-        }
-        
-        .route-list {
-            background-color: #2a2a40;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            min-height: 60px;
-            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.3);
-        }
-        
-        .route-item {
-            display: inline-block;
-            background-color: #3e3e5e;
-            padding: 8px 14px;
-            border-radius: 8px;
-            margin-right: 8px;
-            margin-bottom: 8px;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-            animation: addItem 0.3s;
-        }
-        
-        @keyframes addItem {
-            from { transform: translateY(-10px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        .route-arrow {
-            margin: 0 8px;
-            color: #7b3ff7;
-            font-weight: bold;
-        }
-        
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            z-index: 100;
-            align-items: center;
-            justify-content: center;
-            backdrop-filter: blur(5px);
-        }
-        
-        .modal-content {
-            background-color: #1e1e2e;
-            padding: 25px;
-            border-radius: 15px;
-            max-width: 550px;
-            width: 90%;
+            text-align: center;
             position: relative;
-            animation: zoomIn 0.4s;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(123, 63, 247, 0.3);
-            border: 1px solid rgba(123, 63, 247, 0.3);
         }
-        
-        .close-modal {
+        header img {
             position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 28px;
-            cursor: pointer;
-            color: #777;
-            transition: all 0.2s;
+            top: 10px;
+            left: 20px;
+            height: 50px;
         }
-        
-        .close-modal:hover {
-            color: #fff;
-            transform: rotate(90deg);
-        }
-        
-        .star {
-            position: absolute;
-            background-color: white;
-            border-radius: 50%;
-            opacity: 0.8;
-        }
-        
-        .event-popup {
-            position: absolute;
-            background: linear-gradient(to bottom, #2a2a50, #1e1e3e);
-            border: 2px solid #7b3ff7;
-            border-radius: 15px;
-            padding: 20px;
-            max-width: 350px;
-            box-shadow: 0 0 30px rgba(123, 63, 247, 0.7);
-            z-index: 50;
-            animation: popIn 0.4s;
-            display: none;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-        
-        .event-popup h3 {
-            color: #ff9800;
+        h1, h2, h3 {
             margin-top: 0;
-            text-shadow: 0 0 10px rgba(255, 152, 0, 0.5);
         }
-        
-        .event-visual {
-            position: absolute;
-            pointer-events: none;
-            z-index: 40;
+        section {
+            padding: 30px;
+            max-width: 1200px;
+            margin: auto;
         }
-        
-        .asteroid {
-            width: 15px;
-            height: 15px;
-            background-color: #aaa;
-            border-radius: 50%;
-            box-shadow: inset -2px -2px 3px rgba(0,0,0,0.5), 0 0 10px rgba(255,255,255,0.5);
-            position: absolute;
-            z-index: 30;
+        .progress-bar {
+            background-color: #cce0ff;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
         }
-        
-        .alien-ship {
-            width: 30px;
-            height: 15px;
-            background-color: #ff4081;
-            border-radius: 50%;
-            box-shadow: 0 0 15px #ff4081;
-            position: absolute;
-            z-index: 30;
+        .progress {
+            background-color: #005bb5;
+            height: 30px;
+            width: 30%;
+            text-align: center;
+            color: white;
+            line-height: 30px;
         }
-        
-        .wormhole {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: conic-gradient(from 0deg, #7b3ff7, #3f51b5, #7b3ff7);
-            box-shadow: 0 0 30px #7b3ff7;
-            position: absolute;
-            z-index: 25;
-            animation: rotate 3s linear infinite;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
         }
-        
-        .solar-flare {
-            width: 100px;
-            height: 100px;
-            background: radial-gradient(circle, #f7b63f, transparent);
-            position: absolute;
-            z-index: 25;
-            animation: pulse 2s infinite alternate;
+        table, th, td {
+            border: 1px solid #0072ce;
         }
-        
-        .pirate-ship {
-            width: 40px;
-            height: 20px;
-            background-color: #555;
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        footer {
+            background-color: #0072ce;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            margin-top: 30px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #005bb5;
+            color: white;
+            padding: 10px 20px;
+            margin-top: 20px;
+            text-decoration: none;
             border-radius: 5px;
-            position: absolute;
-            z-index: 30;
-            box-shadow: 0 0 15px rgba(255,255,255,0.3);
         }
-        
-        .pirate-ship::before {
-            content: '☠️';
-            position: absolute;
-            top: -15px;
-            left: 10px;
-            font-size: 20px;
-        }
-        
-        @keyframes pulse {
-            from { opacity: 0.5; transform: scale(0.8); }
-            to { opacity: 1; transform: scale(1.2); }
-        }
-        
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        
-        @keyframes fly {
-            from { transform: translateX(0) translateY(0) rotate(0deg); }
-            to { transform: translateX(100px) translateY(50px) rotate(20deg); }
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        @keyframes zoomIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        
-        @keyframes popIn {
-            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
-            70% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-        }
-        
-        @media (max-width: 768px) {
-            .game-area {
-                flex-direction: column;
-            }
-            
-            .map-container {
-                height: 400px;
-            }
-        }
-        
-        .game-title {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .game-title::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: linear-gradient(to right, transparent, #7b3ff7, transparent);
-        }
-        
-        .help-tip {
-            background-color: #2e2e4e;
+        .tier-card {
+            background: white;
+            border: 2px solid #0072ce;
             border-radius: 10px;
             padding: 15px;
-            margin-top: 15px;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
-            border-left: 3px solid #ff9800;
+            margin: 10px 0;
         }
-        
-        .help-tip h4 {
-            color: #ff9800;
-            margin-top: 0;
-        }
-    </style>
     </style>
 </head>
 <body>
-    <header>
-        <h1>Cosmic Courier: The Route Challenge</h1>
-    </header>
+
+<header>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/0/09/Flag_of_South_Korea.svg" alt="Korean Flag">
+    <h1>Family Battle Pass</h1>
+    <h3>Grow. Earn. Prosper.</h3>
+</header>
+
+<section>
+    <h2>🌟 How It Works</h2>
+    <p>Upon the birth of your first child, the Family Battle Pass is activated. Earn points through birthdays, education expenses, healthcare, childcare purchases, and more!</p>
     
-    <div class="container">
-        <div class="game-description">
-            <p>You are a Cosmic Courier tasked with delivering vital packages to different planets in the galaxy. Visit each planet once and return to your starting point while using the least amount of fuel! Watch out for space anomalies that may affect your journey!</p>
-            <div class="help-tip">
-                <h4>Quick Guide:</h4>
-                <p>1. Click planets in the order you want to visit them</p>
-                <p>2. Visit each planet exactly once and return to your starting point</p>
-                <p>3. Use the least amount of fuel possible to complete your route</p>
-            </div>
-        </div>
-        
-        <div class="game-area">
-            <div class="game-map">
-                <div class="map-container" id="map">
-                    <!-- Planets and paths will be generated here -->
-                </div>
-            </div>
-            
-            <div class="controls">
-                <div class="control-group">
-                    <h3>Mission Control</h3>
-                    <div class="fuel-display">
-                        <div class="fuel-icon">⚡</div>
-                        <div>Fuel Required: <span id="fuel-counter">0</span> units</div>
-                    </div>
-                    
-                    <div class="control-group">
-                        <h3>Current Route</h3>
-                        <div class="route-list" id="route-display"></div>
-                    </div>
-                    
-                    <div class="control-group">
-                        <h3>Available Planets</h3>
-                        <div class="locations-list" id="locations-list">
-                            <!-- Planet options will be generated here -->
-                        </div>
-                    </div>
-                    
-                    <button class="button" id="validate-route">Complete Mission</button>
-                    <button class="button secondary" id="reset-route">Reset Route</button>
-                    <button class="button secondary" id="show-instructions">How to Play</button>
-                </div>
-            </div>
-        </div>
-        
-        <div class="results" id="results">
-            <h2>Mission Results</h2>
-            <div class="results-content" id="results-content"></div>
-        </div>
+    <div class="progress-bar">
+        <div class="progress">30% Progress</div>
     </div>
-    
-    <div class="modal" id="instructions-modal">
-        <div class="modal-content">
-            <span class="close-modal" id="close-instructions">&times;</span>
-            <h2>Mission Briefing</h2>
-            <p>Welcome, Cosmic Courier! Your mission is to deliver packages to all planets in the galaxy while using the least amount of fuel possible.</p>
-            
-            <h3>How to Play:</h3>
-            <ol>
-                <li>The planets are arranged in a hexagon pattern with one in the center</li>
-                <li>Click on planets in the order you wish to visit them</li>
-                <li>Each planet must be visited exactly once</li>
-                <li>You must return to your starting planet at the end</li>
-                <li>The goal is to complete your route with minimal fuel consumption</li>
-                <li>Watch out for space anomalies that will appear during your journey!</li>
-            </ol>
-            
-            <h3>Tips:</h3>
-            <ul>
-                <li>The fuel required for each path is displayed when you hover over connections</li>
-                <li>Plan carefully - sometimes the longest-looking route may use less fuel</li>
-                <li>Space events can help or hurt your mission - adapt your strategy accordingly</li>
-            </ul>
-            
-            <button class="button" id="start-mission">Begin Mission</button>
-        </div>
+
+    <h2>🏆 How to Earn Points</h2>
+    <table>
+        <tr>
+            <th>Event</th>
+            <th>Points Awarded</th>
+        </tr>
+        <tr>
+            <td>Birth of the First Child</td>
+            <td>5,000 points</td>
+        </tr>
+        <tr>
+            <td>Annual Birthday Bonus</td>
+            <td>+1,000 points</td>
+        </tr>
+        <tr>
+            <td>Child-related Spending</td>
+            <td>1 point per ₩1,000 spent</td>
+        </tr>
+        <tr>
+            <td>Milestone Spending Bonus</td>
+            <td>+500 points</td>
+        </tr>
+        <tr>
+            <td>Vaccination Schedule Completed</td>
+            <td>+2,500 points</td>
+        </tr>
+        <tr>
+            <td>School Enrollment</td>
+            <td>+5,000 points</td>
+        </tr>
+    </table>
+
+    <h2>👶 Multiplying Children Bonus</h2>
+    <p>Birth within 18 months ➔ <strong>+50,000 points</strong> for the second child.  
+    Third child ➔ <strong>+75,000 points</strong>.  
+    Fourth child ➔ <strong>+100,000 points</strong> and beyond!</p>
+
+    <h2>🎁 Rewards Tier</h2>
+    <div class="tier-card">
+        <h3>3,000 Points</h3>
+        <p>Essentials Gift Pack</p>
     </div>
-    
-    <div class="modal" id="results-modal">
-        <div class="modal-content">
-            <span class="close-modal" id="close-results">&times;</span>
-            <h2>Mission Complete!</h2>
-            <div id="modal-results-content"></div>
-            <button class="button" id="try-again">Try Again</button>
-        </div>
+    <div class="tier-card">
+        <h3>5,000 Points</h3>
+        <p>₩200,000 Childcare Voucher</p>
     </div>
-    
-    <div class="event-popup" id="event-popup">
-        <h3 id="event-title">Space Event!</h3>
-        <p id="event-description">Description of the event goes here.</p>
-        <button class="button" id="event-ok">OK</button>
+    <div class="tier-card">
+        <h3>10,000 Points</h3>
+        <p>Health Insurance Rebate</p>
     </div>
-    
-    <script>
-        // Game state
-        const gameState = {
-            planets: [],
-            paths: [],
-            currentRoute: [],
-            startPlanet: null,
-            selectedPaths: [],
-            optimalRoute: null,
-            activeEvent: null
-        };
-        
-        // Planet colors
-        const planetColors = [
-            '#f44336', '#e91e63', '#9c27b0', '#673ab7', 
-            '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', 
-            '#009688', '#4caf50', '#8bc34a', '#cddc39', 
-            '#ffeb3b', '#ffc107', '#ff9800', '#ff5722'
-        ];
-        
-        // Planet names
-        const planetNames = [
-            'Nebulon', 'Asteria', 'Kronos', 'Zephyr', 
-            'Solaris', 'Lunara', 'Polaris', 'Thalassa', 
-            'Calypso', 'Hyperion', 'Orion', 'Celeste', 
-            'Phoenix', 'Atlas', 'Nova', 'Elysium',
-            'Zenith', 'Oberon', 'Triton', 'Pandora'
-        ];
-        
-        // Space events
-        const spaceEvents = [
-            {
-                title: "Solar Flare!",
-                description: "A sudden solar flare has reduced your fuel efficiency. The next path you select will cost 20% more fuel.",
-                effect: "increaseCost",
-                value: 0.2,
-                visual: "solarFlare"
-            },
-            {
-                title: "Gravitational Slingshot!",
-                description: "You've discovered a gravitational slingshot opportunity! The next path you select will use 30% less fuel.",
-                effect: "decreaseCost",
-                value: 0.3,
-                visual: "slingshot"
-            },
-            {
-                title: "Asteroid Field!",
-                description: "An asteroid field has appeared! You'll need to navigate carefully and may need to adjust your route.",
-                effect: "blockPath",
-                value: null,
-                visual: "asteroids"
-            },
-            {
-                title: "Alien Attack!",
-                description: "Your ship is under attack by alien raiders! You'll need to take evasive action, increasing your next path's fuel cost by 50%.",
-                effect: "increaseCost",
-                value: 0.5,
-                visual: "alienAttack"
-            },
-            {
-                title: "Wormhole Discovered!",
-                description: "You've found a stable wormhole! You can now instantly travel to any planet with no fuel cost for your next move.",
-                effect: "freePath",
-                value: null,
-                visual: "wormhole"
-            },
-            {
-                title: "Space Pirates!",
-                description: "Space pirates are demanding a toll! Pay 10 units of fuel or find another route.",
-                effect: "fixedCost",
-                value: 10,
-                visual: "pirates"
-            }
-        ];
-        
-        // DOM elements
-        const mapContainer = document.getElementById('map');
-        const locationsListContainer = document.getElementById('locations-list');
-        const routeDisplay = document.getElementById('route-display');
-        const fuelCounter = document.getElementById('fuel-counter');
-        const validateButton = document.getElementById('validate-route');
-        const resetButton = document.getElementById('reset-route');
-        const instructionsButton = document.getElementById('show-instructions');
-        const instructionsModal = document.getElementById('instructions-modal');
-        const resultsModal = document.getElementById('results-modal');
-        const eventPopup = document.getElementById('event-popup');
-        const closeInstructions = document.getElementById('close-instructions');
-        const closeResults = document.getElementById('close-results');
-        const startMissionButton = document.getElementById('start-mission');
-        const tryAgainButton = document.getElementById('try-again');
-        const nextLevelButton = document.getElementById('next-level');
-        const levelButtons = document.querySelectorAll('.level-btn');
-        const eventOkButton = document.getElementById('event-ok');
-        const resultsContainer = document.getElementById('results');
-        const resultsContent = document.getElementById('results-content');
-        const modalResultsContent = document.getElementById('modal-results-content');
-        
-        // Initialize the game
-        function initGame() {
-            // Generate background stars
-            generateStars();
-            
-            // Set up level
-            setupLevel(gameState.currentLevel);
-            
-            // Add event listeners
-            setupEventListeners();
-            
-            // Show instructions on first load
-            instructionsModal.style.display = 'flex';
-        }
-        
-        // Generate background stars
-        function generateStars() {
-            const starCount = 100;
-            for (let i = 0; i < starCount; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                
-                // Random size between 1 and 3 pixels
-                const size = Math.random() * 2 + 1;
-                star.style.width = `${size}px`;
-                star.style.height = `${size}px`;
-                
-                // Random position
-                star.style.left = `${Math.random() * 100}%`;
-                star.style.top = `${Math.random() * 100}%`;
-                
-                // Random opacity
-                star.style.opacity = Math.random() * 0.8 + 0.2;
-                
-                mapContainer.appendChild(star);
-            }
-        }
-        
-        // Setup the level
-        function setupLevel(level) {
-            // Clear previous level
-            clearLevel();
-            
-            // Generate planets based on level
-            switch(level) {
-                case 1:
-                    generatePlanets(6); // Easier level with fewer planets
-                    break;
-                case 2:
-                    generatePlanets(8); // Medium difficulty
-                    break;
-                case 3:
-                    generatePlanets(10); // Hardest level with more planets
-                    break;
-                default:
-                    generatePlanets(6);
-            }
-            
-            // Generate paths between planets
-            generatePaths();
-            
-            // Choose a random planet as the starting point
-            gameState.startPlanet = gameState.planets[Math.floor(Math.random() * gameState.planets.length)];
-            gameState.startPlanet.element.classList.add('selected');
-            
-            // Add the start planet to the route
-            addToRoute(gameState.startPlanet);
-            
-            // Update the locations list
-            updateLocationsList();
-            
-            // Generate an approximate optimal route for scoring
-            generateOptimalRoute();
-        }
-        
-        // Clear the current level
-        function clearLevel() {
-            // Clear planets and paths
-            gameState.planets = [];
-            gameState.paths = [];
-            gameState.currentRoute = [];
-            gameState.selectedPaths = [];
-            gameState.startPlanet = null;
-            
-            // Clear UI elements
-            mapContainer.innerHTML = '';
-            generateStars(); // Regenerate stars
-            
-            // Reset counters
-            fuelCounter.textContent = '0';
-            
-            // Hide results
-            resultsContainer.querySelector('.results-content').style.display = 'none';
-        }
-        
-        // Generate planets in a hexagon pattern
-        function generatePlanets(count) {
-            const mapWidth = mapContainer.offsetWidth;
-            const mapHeight = mapContainer.offsetHeight;
-            const centerX = mapWidth / 2;
-            const centerY = mapHeight / 2;
-            const radius = Math.min(mapWidth, mapHeight) * 0.35; // Size of the hexagon
-            
-            // Always create 6 planets in a hexagon pattern, plus one in the center
-            const actualCount = 7;
-            
-            for (let i = 0; i < actualCount; i++) {
-                let x, y;
-                let size = 30 + Math.random() * 10; // Make planets a bit larger
-                
-                if (i === 0) {
-                    // Center planet
-                    x = centerX;
-                    y = centerY;
-                    size = 40; // Make center planet larger
-                } else {
-                    // Calculate position in hexagon
-                    const angle = (i - 1) * (2 * Math.PI / 6); // Divide the circle into 6 equal parts
-                    x = centerX + radius * Math.cos(angle);
-                    y = centerY + radius * Math.sin(angle);
-                }
-                
-                // Create a new planet
-                const planet = {
-                    id: i,
-                    name: planetNames[i % planetNames.length],
-                    color: planetColors[i % planetColors.length],
-                    x: x,
-                    y: y,
-                    size: size,
-                    angle: i === 0 ? 0 : ((i - 1) * 60) // Store the angle for visual effects
-                };
-                
-                // Create the planet element
-                const planetElement = document.createElement('div');
-                planetElement.className = 'planet';
-                planetElement.style.left = `${planet.x - planet.size/2}px`;
-                planetElement.style.top = `${planet.y - planet.size/2}px`;
-                planetElement.style.width = `${planet.size}px`;
-                planetElement.style.height = `${planet.size}px`;
-                planetElement.style.backgroundColor = planet.color;
-                planetElement.style.boxShadow = `0 0 20px ${planet.color}80, inset 0 0 15px rgba(255,255,255,0.8)`;
-                planetElement.dataset.id = planet.id;
-                
-                // Add planet name
-                const nameElement = document.createElement('div');
-                nameElement.className = 'planet-name';
-                nameElement.textContent = planet.name;
-                planetElement.appendChild(nameElement);
-                
-                // Add planet to the map
-                mapContainer.appendChild(planetElement);
-                
-                // Add a planet ring for visual effect
-                if (Math.random() > 0.5) {
-                    const ringElement = document.createElement('div');
-                    ringElement.className = 'planet-ring';
-                    ringElement.style.width = `${planet.size * 1.5}px`;
-                    ringElement.style.height = `${planet.size * 0.2}px`;
-                    ringElement.style.left = `${-planet.size * 0.25}px`;
-                    ringElement.style.top = `${planet.size/2 - planet.size * 0.1}px`;
-                    ringElement.style.borderRadius = '50%';
-                    ringElement.style.backgroundColor = 'rgba(255,255,255,0.2)';
-                    ringElement.style.transform = `rotateX(75deg)`;
-                    planetElement.appendChild(ringElement);
-                }
-                
-                // Store the element reference
-                planet.element = planetElement;
-                
-                // Add to game state
-                gameState.planets.push(planet);
-            }
-        }
-        
-        // Generate paths between planets
-        function generatePaths() {
-            const planets = gameState.planets;
-            
-            // Create paths between all planets
-            for (let i = 0; i < planets.length; i++) {
-                for (let j = i + 1; j < planets.length; j++) {
-                    const planetA = planets[i];
-                    const planetB = planets[j];
-                    
-                    // Calculate distance
-                    const dx = planetB.x - planetA.x;
-                    const dy = planetB.y - planetA.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    
-                    // Calculate fuel cost (distance-based with some randomness)
-                    const baseCost = Math.round(distance / 10);
-                    const randomFactor = 0.7 + Math.random() * 0.6; // 0.7 to 1.3
-                    const cost = Math.max(1, Math.round(baseCost * randomFactor));
-                    
-                    // Create path
-                    const path = {
-                        from: planetA,
-                        to: planetB,
-                        cost: cost,
-                        distance: distance,
-                        angle: Math.atan2(dy, dx) * (180 / Math.PI)
-                    };
-                    
-                    // Create path element
-                    const pathElement = document.createElement('div');
-                    pathElement.className = 'path';
-                    pathElement.style.width = `${distance}px`;
-                    pathElement.style.height = '2px';
-                    pathElement.style.left = `${planetA.x}px`;
-                    pathElement.style.top = `${planetA.y}px`;
-                    pathElement.style.transform = `rotate(${path.angle}deg)`;
-                    pathElement.title = `Fuel cost: ${cost} units`;
-                    
-                    // Add path to the map
-                    mapContainer.appendChild(pathElement);
-                    
-                    // Store the element reference
-                    path.element = pathElement;
-                    
-                    // Add to game state
-                    gameState.paths.push(path);
-                }
-            }
-        }
-        
-        // Update the locations list
-        function updateLocationsList() {
-            locationsListContainer.innerHTML = '';
-            
-            gameState.planets.forEach(planet => {
-                // Skip planets already in the route (except the start if completing the route)
-                const isInRoute = gameState.currentRoute.includes(planet);
-                const isLastStep = gameState.currentRoute.length === gameState.planets.length;
-                
-                if (!isInRoute || (isLastStep && planet === gameState.startPlanet)) {
-                    const locationItem = document.createElement('div');
-                    locationItem.className = 'location-item';
-                    locationItem.textContent = planet.name;
-                    locationItem.dataset.id = planet.id;
-                    
-                    // Disable if not connected to the last planet in the route
-                    const lastPlanet = gameState.currentRoute[gameState.currentRoute.length - 1];
-                    const isConnected = findPath(lastPlanet, planet) !== null;
-                    
-                    if (!isConnected && gameState.currentRoute.length > 0) {
-                        locationItem.style.opacity = '0.5';
-                        locationItem.style.cursor = 'not-allowed';
-                    } else {
-                        locationItem.addEventListener('click', () => selectLocation(planet));
-                    }
-                    
-                    locationsListContainer.appendChild(locationItem);
-                }
-            });
-        }
-        
-        // Find path between two planets
-        function findPath(planetA, planetB) {
-            return gameState.paths.find(path => 
-                (path.from === planetA && path.to === planetB) || 
-                (path.from === planetB && path.to === planetA)
-            );
-        }
-        
-        // Select a location to add to the route
-        function selectLocation(planet) {
-            const lastPlanet = gameState.currentRoute[gameState.currentRoute.length - 1];
-            
-            // Find the path between the last planet and the selected one
-            const path = findPath(lastPlanet, planet);
-            
-            if (path) {
-                // Create a visual selected path
-                const selectedPath = document.createElement('div');
-                selectedPath.className = 'selected-path';
-                selectedPath.style.width = `${path.distance}px`;
-                selectedPath.style.height = '4px';
-                
-                // Position based on which direction the path goes
-                if (path.from === lastPlanet) {
-                    selectedPath.style.left = `${path.from.x}px`;
-                    selectedPath.style.top = `${path.from.y}px`;
-                    selectedPath.style.transform = `rotate(${path.angle}deg)`;
-                } else {
-                    selectedPath.style.left = `${path.to.x}px`;
-                    selectedPath.style.top = `${path.to.y}px`;
-                    selectedPath.style.transform = `rotate(${path.angle + 180}deg)`;
-                }
-                
-                // Add to map
-                mapContainer.appendChild(selectedPath);
-                gameState.selectedPaths.push(selectedPath);
-                
-                // Apply any active events
-                let effectiveCost = path.cost;
-                if (gameState.activeEvent) {
-                    switch(gameState.activeEvent.effect) {
-                        case 'increaseCost':
-                            effectiveCost = Math.round(path.cost * (1 + gameState.activeEvent.value));
-                            break;
-                        case 'decreaseCost':
-                            effectiveCost = Math.round(path.cost * (1 - gameState.activeEvent.value));
-                            break;
-                        case 'freePath':
-                            effectiveCost = 0;
-                            break;
-                        case 'fixedCost':
-                            effectiveCost = gameState.activeEvent.value;
-                            break;
-                    }
-                    
-                    // Clear the active event after it's been applied
-                    gameState.activeEvent = null;
-                }
-                
-                // Add to route
-                addToRoute(planet, effectiveCost);
-                planet.element.classList.add('selected');
-                
-                // Update the locations list
-                updateLocationsList();
-                
-                // Trigger random event (20% chance)
-                if (Math.random() < 0.2) {
-                    triggerRandomEvent();
-                }
-            }
-        }
-        
-        // Trigger a random space event
-        function triggerRandomEvent() {
-            const event = spaceEvents[Math.floor(Math.random() * spaceEvents.length)];
-            
-            // Set event popup content
-            document.getElementById('event-title').textContent = event.title;
-            document.getElementById('event-description').textContent = event.description;
-            
-            // Show the popup
-            eventPopup.style.display = 'block';
-            
-            // Create visual effect based on event type
-            createEventVisual(event.visual);
-            
-            // Apply event effect
-            applyEventEffect(event);
-        }
-        
-        // Create visual effect for the event
-        function createEventVisual(visualType) {
-            // Clear any existing visuals
-            const existingVisuals = document.querySelectorAll('.event-visual, .asteroid, .alien-ship, .wormhole, .solar-flare, .pirate-ship');
-            existingVisuals.forEach(visual => visual.remove());
-            
-            const mapRect = mapContainer.getBoundingClientRect();
-            
-            switch(visualType) {
-                case 'asteroids':
-                    // Create multiple asteroids
-                    for (let i = 0; i < 15; i++) {
-                        const asteroid = document.createElement('div');
-                        asteroid.className = 'asteroid';
-                        asteroid.style.left = `${Math.random() * mapRect.width}px`;
-                        asteroid.style.top = `${Math.random() * mapRect.height}px`;
-                        
-                        // Random size
-                        const size = 5 + Math.random() * 15;
-                        asteroid.style.width = `${size}px`;
-                        asteroid.style.height = `${size}px`;
-                        
-                        // Random movement animation
-                        asteroid.style.animation = `fly ${2 + Math.random() * 4}s linear infinite`;
-                        asteroid.style.animationDelay = `${Math.random() * 2}s`;
-                        
-                        mapContainer.appendChild(asteroid);
-                        
-                        // Remove after 6 seconds
-                        setTimeout(() => {
-                            if (asteroid.parentNode) {
-                                asteroid.parentNode.removeChild(asteroid);
-                            }
-                        }, 6000);
-                    }
-                    break;
-                    
-                case 'alienAttack':
-                    // Create alien ships
-                    for (let i = 0; i < 3; i++) {
-                        const alien = document.createElement('div');
-                        alien.className = 'alien-ship';
-                        alien.style.left = `${-50 + Math.random() * 30}px`;
-                        alien.style.top = `${Math.random() * mapRect.height}px`;
-                        
-                        // Animation
-                        alien.style.animation = `fly ${3 + Math.random() * 2}s linear infinite`;
-                        alien.style.animationDelay = `${Math.random() * 1.5}s`;
-                        
-                        mapContainer.appendChild(alien);
-                        
-                        // Remove after 6 seconds
-                        setTimeout(() => {
-                            if (alien.parentNode) {
-                                alien.parentNode.removeChild(alien);
-                            }
-                        }, 6000);
-                    }
-                    break;
-                    
-                case 'wormhole':
-                    const wormhole = document.createElement('div');
-                    wormhole.className = 'wormhole';
-                    
-                    // Position in a random location
-                    wormhole.style.left = `${Math.random() * (mapRect.width - 60)}px`;
-                    wormhole.style.top = `${Math.random() * (mapRect.height - 60)}px`;
-                    
-                    mapContainer.appendChild(wormhole);
-                    
-                    // Remove after 6 seconds
-                    setTimeout(() => {
-                        if (wormhole.parentNode) {
-                            wormhole.parentNode.removeChild(wormhole);
-                        }
-                    }, 6000);
-                    break;
-                    
-                case 'solarFlare':
-                    const flare = document.createElement('div');
-                    flare.className = 'solar-flare';
-                    
-                    // Position at the edge
-                    flare.style.left = `${-50}px`;
-                    flare.style.top = `${-50}px`;
-                    
-                    mapContainer.appendChild(flare);
-                    
-                    // Remove after 6 seconds
-                    setTimeout(() => {
-                        if (flare.parentNode) {
-                            flare.parentNode.removeChild(flare);
-                        }
-                    }, 6000);
-                    break;
-                    
-                case 'pirates':
-                    const pirates = document.createElement('div');
-                    pirates.className = 'pirate-ship';
-                    
-                    // Position in a random location
-                    pirates.style.left = `${Math.random() * (mapRect.width - 40)}px`;
-                    pirates.style.top = `${Math.random() * (mapRect.height - 20)}px`;
-                    
-                    mapContainer.appendChild(pirates);
-                    
-                    // Remove after 6 seconds
-                    setTimeout(() => {
-                        if (pirates.parentNode) {
-                            pirates.parentNode.removeChild(pirates);
-                        }
-                    }, 6000);
-                    break;
-                    
-                case 'slingshot':
-                    // Create a visual effect for slingshot
-                    const slingshot = document.createElement('div');
-                    slingshot.className = 'event-visual';
-                    slingshot.style.width = '150px';
-                    slingshot.style.height = '150px';
-                    slingshot.style.borderRadius = '50%';
-                    slingshot.style.background = 'radial-gradient(circle, rgba(123, 63, 247, 0.2), transparent)';
-                    slingshot.style.animation = 'pulse 1.5s infinite alternate';
-                    
-                    // Position in center
-                    slingshot.style.left = `${mapRect.width/2 - 75}px`;
-                    slingshot.style.top = `${mapRect.height/2 - 75}px`;
-                    
-                    mapContainer.appendChild(slingshot);
-                    
-                    // Remove after 6 seconds
-                    setTimeout(() => {
-                        if (slingshot.parentNode) {
-                            slingshot.parentNode.removeChild(slingshot);
-                        }
-                    }, 6000);
-                    break;
-                
-                default:
-                    break;
-            }
-        }
-        
-        // Apply the effect of the event
-        function applyEventEffect(event) {
-            // Store the event effect in game state
-            gameState.activeEvent = event;
-            
-            // Effects will be applied when the next path is selected in the selectLocation function
-        }
-        
-        // Add a planet to the current route
-        function addToRoute(planet, cost = 0) {
-            gameState.currentRoute.push(planet);
-            
-            // Update the route display
-            updateRouteDisplay();
-            
-            // Update the fuel counter
-            const currentFuel = parseInt(fuelCounter.textContent);
-            fuelCounter.textContent = currentFuel + cost;
-        }
-        
-        // Update the route display
-        function updateRouteDisplay() {
-            routeDisplay.innerHTML = '';
-            
-            gameState.currentRoute.forEach((planet, index) => {
-                const routeItem = document.createElement('div');
-                routeItem.className = 'route-item';
-                routeItem.textContent = planet.name;
-                routeItem.style.backgroundColor = planet.color;
-                routeItem.style.color = getContrastColor(planet.color);
-                
-                routeDisplay.appendChild(routeItem);
-                
-                // Add arrow between planets
-                if (index < gameState.currentRoute.length - 1) {
-                    const arrow = document.createElement('span');
-                    arrow.className = 'route-arrow';
-                    arrow.textContent = '→';
-                    routeDisplay.appendChild(arrow);
-                }
-            });
-        }
-        
-        // Get a contrasting text color for a background color
-        function getContrastColor(hexColor) {
-            // Convert hex to RGB
-            const r = parseInt(hexColor.slice(1, 3), 16);
-            const g = parseInt(hexColor.slice(3, 5), 16);
-            const b = parseInt(hexColor.slice(5, 7), 16);
-            
-            // Calculate luminance
-            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-            
-            // Return black or white based on luminance
-            return luminance > 0.5 ? '#000000' : '#ffffff';
-        }
-        
-        // Validate the route
-        function validateRoute() {
-            const isComplete = gameState.currentRoute.length === gameState.planets.length + 1;
-            const endsAtStart = gameState.currentRoute[0] === gameState.currentRoute[gameState.currentRoute.length - 1];
-            
-            // Calculate the total fuel cost
-            let totalFuel = parseInt(fuelCounter.textContent);
-            
-            // Check if the route is valid
-            if (gameState.currentRoute.length <= 1) {
-                showResults('Error', `You need to visit all planets before validating your route.`);
-                return;
-            }
-            
-            if (!isComplete) {
-                showResults('Error', `You need to visit all ${gameState.planets.length} planets before returning to your starting point.`);
-                return;
-            }
-            
-            if (!endsAtStart) {
-                showResults('Error', `Your route must end at your starting planet: ${gameState.startPlanet.name}.`);
-                return;
-            }
-            
-            // Calculate score based on optimal route
-            const optimalFuel = gameState.optimalRoute.cost;
-            const efficiency = Math.round((optimalFuel / totalFuel) * 100);
-            let rating;
-            
-            if (efficiency >= 95) {
-                rating = 'S+';
-            } else if (efficiency >= 90) {
-                rating = 'S';
-            } else if (efficiency >= 80) {
-                rating = 'A';
-            } else if (efficiency >= 70) {
-                rating = 'B';
-            } else if (efficiency >= 60) {
-                rating = 'C';
-            } else {
-                rating = 'D';
-            }
-            
-            // Show results with animated emoji
-            let emoji = '';
-            if (rating === 'S+' || rating === 'S') {
-                emoji = '🌟';
-            } else if (rating === 'A') {
-                emoji = '✨';
-            } else if (rating === 'B') {
-                emoji = '👍';
-            } else {
-                emoji = '🚀';
-            }
-            
-            // Show results
-            showResults('Success', `
-                <h3>${emoji} Mission Complete! ${emoji}</h3>
-                <p>You've successfully delivered packages to all planets and returned to ${gameState.startPlanet.name}.</p>
-                <p>Total fuel used: <strong>${totalFuel} units</strong></p>
-                <p>Optimal route would use approximately: <strong>${optimalFuel} units</strong></p>
-                <p>Fuel efficiency rating: <strong>${rating} (${efficiency}%)</strong></p>
-                <p>Your Route: ${generateRouteSummary()}</p>
-            `, true);
-        }
-        
-        // Generate a text summary of the route
-        function generateRouteSummary() {
-            return gameState.currentRoute.map(planet => planet.name).join(' → ');
-        }
-        
-        // Show results
-        function showResults(status, message, showModal = false) {
-            resultsContent.innerHTML = message;
-            resultsContent.style.display = 'block';
-            
-            if (showModal) {
-                modalResultsContent.innerHTML = message;
-                resultsModal.style.display = 'flex';
-                
-                // Show or hide the next level button
-                nextLevelButton.style.display = (gameState.currentLevel < 3) ? 'inline-block' : 'none';
-            }
-        }
-        
-        // Reset the route
-        function resetRoute() {
-            // Clear the current route except for the starting planet
-            while (gameState.currentRoute.length > 1) {
-                const planet = gameState.currentRoute.pop();
-                planet.element.classList.remove('selected');
-            }
-            
-            // Clear selected paths
-            gameState.selectedPaths.forEach(path => {
-                mapContainer.removeChild(path);
-            });
-            gameState.selectedPaths = [];
-            
-            // Reset fuel counter
-            fuelCounter.textContent = '0';
-            
-            // Update the route display
-            updateRouteDisplay();
-            
-            // Update the locations list
-            updateLocationsList();
-            
-            // Hide results
-            resultsContent.style.display = 'none';
-        }
-        
-        // Generate an approximate optimal route using a simple greedy algorithm
-        function generateOptimalRoute() {
-            // Start from the start planet
-            let current = gameState.startPlanet;
-            let remainingPlanets = [...gameState.planets].filter(p => p !== current);
-            let route = [current];
-            let totalCost = 0;
-            
-            // Greedy algorithm - always choose the closest unvisited planet
-            while (remainingPlanets.length > 0) {
-                // Find the closest planet
-                let closestPlanet = null;
-                let minCost = Infinity;
-                
-                for (const planet of remainingPlanets) {
-                    const path = findPath(current, planet);
-                    if (path && path.cost < minCost) {
-                        minCost = path.cost;
-                        closestPlanet = planet;
-                    }
-                }
-                
-                if (closestPlanet) {
-                    // Add to route
-                    route.push(closestPlanet);
-                    totalCost += minCost;
-                    
-                    // Update for next iteration
-                    current = closestPlanet;
-                    remainingPlanets = remainingPlanets.filter(p => p !== closestPlanet);
-                } else {
-                    // Shouldn't happen in a fully connected graph
-                    break;
-                }
-            }
-            
-            // Return to start
-            const finalPath = findPath(current, gameState.startPlanet);
-            if (finalPath) {
-                route.push(gameState.startPlanet);
-                totalCost += finalPath.cost;
-            }
-            
-            // Store the optimal route
-            gameState.optimalRoute = {
-                route: route,
-                cost: totalCost
-            };
-        }
-        
-        // Setup event listeners
-        function setupEventListeners() {
-            // Validate route button
-            validateButton.addEventListener('click', validateRoute);
-            
-            // Reset route button
-            resetButton.addEventListener('click', resetRoute);
-            
-            // Instructions button
-            instructionsButton.addEventListener('click', () => {
-                instructionsModal.style.display = 'flex';
-            });
-            
-            // Close instructions
-            closeInstructions.addEventListener('click', () => {
-                instructionsModal.style.display = 'none';
-            });
-            
-            // Start mission button
-            startMissionButton.addEventListener('click', () => {
-                instructionsModal.style.display = 'none';
-            });
-            
-            // Close results
-            closeResults.addEventListener('click', () => {
-                resultsModal.style.display = 'none';
-            });
-            
-            // Try again button
-            tryAgainButton.addEventListener('click', () => {
-                resultsModal.style.display = 'none';
-                resetRoute();
-            });
-            
-            // Event OK button
-            eventOkButton.addEventListener('click', () => {
-                eventPopup.style.display = 'none';
-            });
-            
-            // Planet click events (dynamically added in the generatePlanets function)
-        }
-        
-        // Initialize the game when the page loads
-        window.addEventListener('load', initGame);
-    </script>
-    </script>
+    <div class="tier-card">
+        <h3>20,000 Points</h3>
+        <p>Luxury Stroller / ₩1M Shopping Voucher</p>
+    </div>
+    <div class="tier-card">
+        <h3>30,000 Points</h3>
+        <p>Kindergarten Tuition Subsidy</p>
+    </div>
+    <div class="tier-card">
+        <h3>50,000 Points</h3>
+        <p>₩5M Education Savings Fund</p>
+    </div>
+    <div class="tier-card">
+        <h3>100,000 Points</h3>
+        <p>Priority School Admissions</p>
+    </div>
+    <div class="tier-card">
+        <h3>200,000 Points</h3>
+        <p>Global Exchange Opportunities</p>
+    </div>
+    <div class="tier-card">
+        <h3>1,000,000 Points</h3>
+        <p>Lifetime Tax Reductions + ₩50M Housing Bonus</p>
+    </div>
+
+    <a href="#" class="btn">Join Now!</a>
+</section>
+
+<footer>
+    <p>Family Battle Pass | South Korea 🇰🇷 | 2025</p>
+</footer>
+
 </body>
 </html>
